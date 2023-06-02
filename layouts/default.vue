@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{ homepage: isHomepage }">
     <NuxtLoadingIndicator
       :duration="10000"
       :color="`repeating-linear-gradient(to right,#e2e8f0 0%,#4169e1 50%,#00008B 100%)`"
@@ -24,6 +24,9 @@ useHead({
     return titleChunk ? `${titleChunk}` : "Nimvio Website";
   },
 });
+
+const route = useRoute();
+const isHomepage = route.path === "/";
 </script>
 
 <script>
