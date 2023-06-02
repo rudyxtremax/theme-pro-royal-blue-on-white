@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout :name="data.Data.layoutName ? data.Data.layoutName : 'default'">
-    <template v-for="(contents, key) in data.widgets" #[key]>
+    <template v-for="(contents, key) in data?.widgets" #[key]>
       <component-renderer
         :key="key"
         :components="contents"
@@ -10,14 +10,16 @@
     <LazyCommonRefetchButton @click="refresh">
       {{ data && !pending ? "Fetch Newest Data" : "Fetching data..." }}
     </LazyCommonRefetchButton>
+
+    <template #empty>
+      <CommonEmpty v-if="data" :show-empty="showEmpty" :data="data" />
+    </template>
   </NuxtLayout>
 </template>
 
 <script setup>
-import groupBy from "lodash/groupBy";
-import clone from "lodash/clone";
-import omit from "lodash/omit";
 import { getContentByPageSlug, getContentById } from "~~/utils/dataFetching";
+import transformContent from "~~/utils/transformContent";
 
 const route = useRoute();
 const currentPath = route.path;
@@ -35,11 +37,7 @@ const { data, refresh, pending } = await useAsyncData(
         }
       );
 
-      const widgetContent = newResponse.Data.widgets;
-      widgetContent.unshift(omit(clone(newResponse), "Data.widgets"));
-
-      const widgets = groupBy(widgetContent, "Data.placeholder");
-      return { ...newResponse, widgets };
+      return transformContent(newResponse);
     }
     const { data: response } = await getContentByPageSlug(
       $gqlClient,
@@ -49,16 +47,14 @@ const { data, refresh, pending } = await useAsyncData(
       }
     );
 
-    const widgetContent = response.Data.widgets;
-    widgetContent.unshift(omit(clone(response), "Data.widgets"));
-
-    const widgets = groupBy(widgetContent, "Data.placeholder");
-    return {
-      ...response,
-      widgets,
-    };
+    return transformContent(response);
   }
 );
+
+const showEmpty = computed(() => {
+  const { Data } = data.value;
+  return !Data.layoutName && !Data.placeholder && !Data.contentTitle;
+});
 
 const updateContentById = (content, id, newContent, cache = {}) => {
   if (cache[content.ContentID]) return null;
@@ -96,7 +92,7 @@ onBeforeMount(() => {
       formData.formData
     );
     if (newContent) {
-      data.value = newContent;
+      data.value = transformContent(newContent);
     }
   });
 });
