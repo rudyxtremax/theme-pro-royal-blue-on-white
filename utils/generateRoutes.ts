@@ -13,9 +13,9 @@ export const generateRoutes = async (nitroConfig) => {
   const client = new GraphQLClient(endpoint, {
     headers: { Authorization: previewToken },
   });
-  // if (nitroConfig.dev) {
-  //   return;
-  // }
+  if (nitroConfig.dev) {
+    return;
+  }
   // Set all possible routes to runtimeConfig
   nitroConfig.runtimeConfig.public.routes = [];
 
